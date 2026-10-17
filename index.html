@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Моды — Minecraft</title>
+  <style>
+    :root{
+      --bg: #f7f7f9;
+      --card: #ffffff;
+      --text: #0b1220;
+      --muted: #556077;
+      --accent: #00a8ff;
+      --glass: rgba(255,255,255,0.55);
+      --bar-glass: rgba(0,0,0,0.18);
+      --radius: 12px;
+      --shadow: 0 6px 18px rgba(12,18,30,0.08);
+      --max-width: 980px;
+    }
+    :root[data-theme="dark"]{
+      --bg: #0b0f14;
+      --card: #0f161b;
+      --text: #e6eef6;
+      --muted: #9fb1c8;
+      --accent: #4fc3ff;
+      --glass: rgba(255,255,255,0.04);
+      --bar-glass: rgba(255,255,255,0.04);
+      --shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, Ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,var(--bg), color-mix(in srgb, var(--bg) 90%, #0000 10%));
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:24px;
+      padding:28px 16px 100px; /* leave space for bottom bar */
+      min-height:100%;
+    }
+
+    header{
+      width:100%;
+      max-width:var(--max-width);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+    header h1{
+      margin:0;
+      font-size:1.25rem;
+      font-weight:600;
+      letter-spacing:-0.01em;
+    }
+    header p{margin:0;color:var(--muted);font-size:0.95rem}
+
+    main{
+      width:100%;
+      max-width:var(--max-width);
+      display:grid;
+      grid-template-columns:1fr;
+      gap:16px;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:var(--shadow);
+      color:var(--text);
+    }
+
+    .mods-list{
+      min-height:260px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      flex-direction:column;
+      color:var(--muted);
+    }
+    .empty-illustration{
+      width:96px;height:96px;border-radius:14px;
+      background:linear-gradient(135deg,var(--glass),transparent);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;color:var(--muted);
+      box-shadow:inset 0 -8px 20px rgba(0,0,0,0.02);
+    }
+
+    /* Bottom transparent bar */
+    .bottom-bar{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:18px;
+      width:clamp(320px, 92%, 980px);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px;
+      border-radius:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(4,10,20,0.18);
+      align-items:center;
+      z-index:50;
+      pointer-events:auto;
+    }
+    :root[data-theme="dark"] .bottom-bar{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    }
+    .bar-left{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+    .tab-button{
+      appearance:none;
+      border:0;
+      background:transparent;
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+    .tab-button[aria-pressed="true"]{
+      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 20%, transparent), transparent);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+    .tab-button svg{opacity:0.9;width:18px;height:18px}
+
+    .bar-right{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      color:var(--muted);
+      font-size:0.9rem;
+    }
+
+    /* Settings panel (popup above bar) */
+    .panel{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:86px;
+      width:clamp(300px, 86%, 480px);
+      z-index:60;
+      display:none;
+    }
+    .panel.open{display:block}
+    .panel .card{padding:16px}
+
+    .control{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+    .control label{font-weight:600}
+    .options{display:flex;gap:8px;flex-wrap:wrap}
+    .option{
+      padding:8px 12px;border-radius:10px;background:var(--glass);
+      border:1px solid transparent;color:var(--text);cursor:pointer;font-weight:600;
+    }
+    .option.active{
+      background:linear-gradient(90deg,var(--accent), color-mix(in srgb, var(--accent) 50%, transparent));
+      color:#001827;
+      box-shadow:0 6px 18px rgba(0,0,0,0.12);
+    }
+
+    select{
+      padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:var(--card);color:var(--text);
+    }
+    :root[data-theme="dark"] select{border-color:rgba(255,255,255,0.06)}
+
+    /* Responsive tweaks */
+    @media (max-width:420px){
+      header h1{font-size:1rem}
+      .bottom-bar{padding:8px;gap:6px}
+      .tab-button{padding:8px 10px}
+      .panel{bottom:78px;width:92%}
+    }
+
+    /* Small helper */
+    .muted{color:var(--muted);font-size:0.95rem}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 data-i18n="siteTitle">Моды для Minecraft</h1>
+      <p data-i18n="siteSubtitle" class="muted">Пока что пусто — добавьте моды позже</p>
+    </div>
+    <div class="muted" aria-hidden="true">v0.1</div>
+  </header>
+
+  <main>
+    <section class="card" id="modsCard" aria-labelledby="modsTitle">
+      <h2 id="modsTitle" data-i18n="modsTitle">Моды</h2>
+      <div class="mods-list" id="modsList" role="list">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-illustration">MC</div>
+          <div>
+            <div style="font-weight:700;margin-top:8px" data-i18n="noMods">Пока что здесь пусто</div>
+            <div class="muted" data-i18n="noModsDesc">Когда добавите — они появятся здесь</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings panel (hidden by default) -->
+  <div class="panel" id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="card" >
+      <h3 id="settingsTitle" data-i18n="settingsTitle">Настройки</h3>
+
+      <div class="control">
+        <label data-i18n="themeLabel">Тема</label>
+        <div class="options" role="list">
+          <button type="button" class="option" data-theme="light" id="optLight" role="listitem">Светлая</button>
+          <button type="button" class="option" data-theme="dark" id="optDark" role="listitem">Тёмная</button>
+        </div>
+      </div>
+
+      <div class="control">
+        <label data-i18n="languageLabel">Язык</label>
+        <select id="languageSelect" aria-label="language select">
+          <option value="ru">Русский</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button id="closeSettings" class="option" style="background:transparent;border:1px solid rgba(0,0,0,0.06)">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom transparent bar with tabs -->
+  <nav class="bottom-bar" role="navigation" aria-label="bottom navigation">
+    <div class="bar-left" role="tablist" aria-label="Tabs">
+      <button class="tab-button" id="tabMods" role="tab" aria-pressed="true" aria-controls="modsCard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7h18M7 7v10M17 7v10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="modsLabel">Моды</span>
+      </button>
+
+      <button class="tab-button" id="tabSettings" role="tab" aria-pressed="false" aria-controls="settingsPanel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" stroke-width="1.4"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.1a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 2.3 16.8l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.1a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.3 3.3A2 2 0 1 1 7.13.47l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V0a2 2 0 1 1 4 0v.1a1.65 1.65 0 0 0 1 1.51h.1a1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.7 3.2l-.06.06a1.65 1.65 0 0 0-.33 1.82V6a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.1a1.65 1.65 0 0 0-1.5 1z" stroke-width="0.9" opacity="0.9"/></svg>
+        <span data-i18n="settingsLabel">Настройки</span>
+      </button>
+    </div>
+
+    <div class="bar-right">
+      <div class="muted" data-i18n="bottomInfo">Тема: <span id="currentTheme">Светлая</span></div>
+    </div>
+  </nav>
+
+  <script>
+    // GitHub Copilot Chat Assistant — single-file interactive site.
+    (function(){
+      // Translations (add languages easily)
+      const translations = {
+        ru: {
+          siteTitle: "Моды для Minecraft",
+          siteSubtitle: "Пока что пусто — добавьте моды позже",
+          modsTitle: "Моды",
+          settingsTitle: "Настройки",
+          modsLabel: "Моды",
+          settingsLabel: "Настройки",
+          noMods: "Пока что здесь пусто",
+          noModsDesc: "Когда добавите — они появятся здесь",
+          themeLabel: "Тема",
+          languageLabel: "Язык",
+          light: "Светлая",
+          dark: "Тёмная",
+          bottomInfo: "Тема:"
+        },
+        en: {
+          siteTitle: "Minecraft Mods",
+          siteSubtitle: "Empty for now — add mods later",
+          modsTitle: "Mods",
+          settingsTitle: "Settings",
+          modsLabel: "Mods",
+          settingsLabel: "Settings",
+          noMods: "No mods yet",
+          noModsDesc: "When you add mods they will appear here",
+          themeLabel: "Theme",
+          languageLabel: "Language",
+          light: "Light",
+          dark: "Dark",
+          bottomInfo: "Theme:"
+        }
+      };
+
+      // Elements
+      const body = document.documentElement;
+      const settingsPanel = document.getElementById('settingsPanel');
+      const tabMods = document.getElementById('tabMods');
+      const tabSettings = document.getElementById('tabSettings');
+      const optLight = document.getElementById('optLight');
+      const optDark = document.getElementById('optDark');
+      const languageSelect = document.getElementById('languageSelect');
+      const currentThemeLabel = document.getElementById('currentTheme');
+
+      // Persisted settings keys
+      const LS_THEME = 'mc_mods_site_theme';
+      const LS_LANG = 'mc_mods_site_lang';
+
+      // Helpers
+      function saveTheme(t){
+        localStorage.setItem(LS_THEME, t);
+      }
+      function saveLang(l){
+        localStorage.setItem(LS_LANG, l);
+      }
+
+      function applyTheme(theme){
+        if(theme === 'dark'){
+          body.setAttribute('data-theme','dark');
+        } else {
+          body.removeAttribute('data-theme');
+        }
+        // update UI active states
+        optLight.classList.toggle('active', theme === 'light');
+        optDark.classList.toggle('active', theme === 'dark');
+        currentThemeLabel.textContent = t(theme === 'dark' ? 'dark' : 'light');
+        saveTheme(theme);
+      }
+
+      function t(key){
+        const lang = currentLang();
+        return (translations[lang] && translations[lang][key]) ? translations[lang][key] : translations['ru'][key] || key;
+      }
+
+      function applyTranslations(){
+        // find all elements with data-i18n attribute
+        document.querySelectorAll('[data-i18n]').forEach(el=>{
+          const key = el.getAttribute('data-i18n');
+          el.textContent = t(key);
+        });
+        // update the theme label text for currentThemeLabel already set in applyTheme
+        currentThemeLabel.textContent = t(localStorage.getItem(LS_THEME) === 'dark' ? 'dark' : 'light');
+        // update language select value without triggering change event
+        languageSelect.value = currentLang();
+      }
+
+      function currentLang(){
+        return localStorage.getItem(LS_LANG) || navigator.language?.startsWith('en') ? (localStorage.getItem(LS_LANG) || (navigator.language?.startsWith('en') ? 'en' : 'ru')) : 'ru';
+      }
+
+      // Tab behavior
+      function showMods(){
+        // close settings panel
+        settingsPanel.classList.remove('open');
+        tabMods.setAttribute('aria-pressed','true');
+        tabSettings.setAttribute('aria-pressed','false');
+        document.getElementById('modsCard').focus?.();
+      }
+      function toggleSettings(){
+        const open = settingsPanel.classList.toggle('open');
+        tabSettings.setAttribute('aria-pressed', open ? 'true' : 'false');
+        tabMods.setAttribute('aria-pressed', open ? 'false' : 'true');
+        if(open){
+          // focus first control
+          optLight.focus();
+        }
+      }
+
+      // Listeners
+      tabMods.addEventListener('click', showMods);
+      tabSettings.addEventListener('click', toggleSettings);
+
+      optLight.addEventListener('click', ()=>applyTheme('light'));
+      optDark.addEventListener('click', ()=>applyTheme('dark'));
+      document.getElementById('closeSettings').addEventListener('click', ()=>{ settingsPanel.classList.remove('open'); tabSettings.setAttribute('aria-pressed','false'); tabMods.setAttribute('aria-pressed','true'); });
+
+      languageSelect.addEventListener('change', (e)=>{
+        const val = e.target.value;
+        saveLang(val);
+        applyTranslations();
+      });
+
+      // Initialize from localStorage
+      (function init(){
+        let theme = localStorage.getItem(LS_THEME) || 'light';
+        // if user prefers dark:
+        if(!localStorage.getItem(LS_THEME) && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
+          theme = 'dark';
+        }
+        applyTheme(theme);
+
+        // language:
+        let lang = localStorage.getItem(LS_LANG);
+        if(!lang){
+          if(navigator.language && navigator.language.startsWith('en')) lang = 'en';
+          else if(navigator.language && navigator.language.startsWith('ru')) lang = 'ru';
+          else lang = 'ru';
+          saveLang(lang);
+        }
+        languageSelect.value = lang;
+
+        applyTranslations();
+
+        // accessibility: close panel on Escape
+        window.addEventListener('keydown', (e)=>{
+          if(e.key === 'Escape'){
+            settingsPanel.classList.remove('open');
+            tabSettings.setAttribute('aria-pressed','false');
+            tabMods.setAttribute('aria-pressed','true');
+          }
+        });
+      })();
+
+      // Expose for debugging (optional)
+      window.__mc_mods_site = {
+        applyTheme,
+        applyTranslations,
+        translations
+      };
+
+    })();
+  </script>
+</body>
+</html>
